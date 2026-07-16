@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数据大屏展示 - 印务生产数据</title>
+    <title>印务中心 · 数据大屏 - 印务中心生产数据</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap');
         :root {
@@ -95,6 +95,35 @@
             margin: 0 auto;
             padding: 40px 24px;
         }
+
+        /* 排序按钮 */
+        .sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .sort-btn:hover {
+            color: var(--accent);
+            background: rgba(37,99,235,0.05);
+        }
+        .sort-btn .sort-icon {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        .sort-btn.asc .sort-icon {
+            transform: rotate(180deg);
+        }
+
         .post-list { display: flex; flex-direction: column; gap: 24px; }
         .post-card {
             background: var(--card-bg);
@@ -171,7 +200,7 @@
 <body class="">
     <nav class="nav">
         <a href="index.html" class="brand">
-            <span class="main-title">📊 印务生产数据</span>
+            <span class="main-title">📊 印务中心生产数据</span>
             
         </a>
         <div style="display: flex; gap: 24px; align-items: center;">
@@ -182,49 +211,96 @@
 
     
         <div class="container">
-            <div style="margin-bottom: 32px;">
-                <h1 style="font-size:1.6rem; font-weight:700;">数据大屏展示</h1>
-                <p style="color:var(--muted); margin-top:8px;">共 6 篇报告</p>
+            <div style="margin-bottom: 8px;">
+                <h1 style="font-size:1.6rem; font-weight:700; margin:0;">印务中心 · 数据大屏</h1>
+                <p style="color:var(--muted); margin-top:8px;">共 2 篇报告</p>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+                <button class="sort-btn" id="sortByDate">
+                    按时间排序 <span class="sort-icon"></span>
+                </button>
             </div>
             <div class="post-list">
                 
-        <a href="2026年上半年新书新书排版分发 & 周期排名&提交差错率统计.html" class="post-card">
-            <h2>排版分发 & 周期排名 · 综合看板</h2>
-            <div class="meta">📅 2026-07-14</div>
-            <div class="summary">截至6月图书发排情况统计及对比。</div>
-        </a>
-        <a href="2026年上半年校对差错率分析看板.html" class="post-card">
-            <h2>无纸化发稿 · 校对差错率统计</h2>
-            <div class="meta">📅 2026-07-09</div>
-            <div class="summary">发稿无纸化&轻度修订品种校对校对遍数及差错率分析。</div>
-        </a>
-        <a href="2026年上半年数字教材.html" class="post-card">
-            <h2>数字教材 · 项目进度看板</h2>
-            <div class="meta">📅 2026-07-07</div>
-            <div class="summary">截至6月数字教材发排情况。</div>
-        </a>
-        <a href="2026年上半年印务有偿及排印装结算数据.html" class="post-card">
-            <h2>2026上半年 · 印务有偿及排印装结算</h2>
-            <div class="meta">📅 2026-07-06</div>
-            <div class="summary">截至6月印务有偿收费情况。</div>
-        </a>
         <a href="2026年印装周期和计划完成度6月.html" class="post-card">
             <h2>2026年度印装生产数据监控报表</h2>
             <div class="meta">📅 2026-07-07</div>
             <div class="summary">6月印装生产数据监控与分析报表，含各厂产量及同比。</div>
         </a>
-        <a href="2026年印装周期和计划完成度_上半年.html" class="post-card">
+        <a href="2026年印装周期和计划完成度_日常_2026-07-15.html" class="post-card">
             <h2>2026年度印装生产数据监控报表</h2>
-            <div class="meta">📅 2026-07-08</div>
-            <div class="summary">2026上半年印装生产数据监控与分析报表，含各厂产量及同比。</div>
+            <div class="meta">📅 2026-07-15</div>
+            <div class="summary">暂无摘要</div>
         </a>
             </div>
         </div>
 
     <footer class="footer">
-        <p>© 2026 印务生产数据 · Powered by Python</p>
+        <p>© 2026 印务中心生产数据 · Powered by Python</p>
     </footer>
 
+    
+
+    
+    <script>
+        (function() {
+            const postList = document.querySelector('.post-list');
+            const sortBtn = document.getElementById('sortByDate');
+            let sortAsc = false;
+
+            function getCards() {
+                return Array.from(postList.querySelectorAll('.post-card'));
+            }
+
+            function parseDate(card) {
+                const metaEl = card.querySelector('.meta');
+                if (!metaEl) return '';
+                const text = metaEl.textContent.trim();
+                const match = text.match(/(\d{4}-\d{2}-\d{2})/);
+                return match ? match[1] : text.replace('📅 ', '');
+            }
+
+            function sortCards() {
+                const cards = getCards();
+                cards.sort(function(a, b) {
+                    const dateA = parseDate(a);
+                    const dateB = parseDate(b);
+                    if (sortAsc) {
+                        return dateA.localeCompare(dateB);
+                    } else {
+                        return dateB.localeCompare(dateA);
+                    }
+                });
+                cards.forEach(function(card) {
+                    postList.appendChild(card);
+                });
+            }
+
+            function updateButtonState() {
+                if (sortAsc) {
+                    sortBtn.classList.add('asc');
+                    sortBtn.innerHTML = '按时间排序 <span class="sort-icon">▼</span>';
+                } else {
+                    sortBtn.classList.remove('asc');
+                    sortBtn.innerHTML = '按时间排序 <span class="sort-icon">▼</span>';
+                }
+            }
+
+            sortBtn.addEventListener('click', function() {
+                sortAsc = !sortAsc;
+                sortCards();
+                updateButtonState();
+                localStorage.setItem('sortAsc', sortAsc);
+            });
+
+            const savedSort = localStorage.getItem('sortAsc');
+            if (savedSort === 'true') {
+                sortAsc = true;
+                sortCards();
+            }
+            updateButtonState();
+        })();
+    </script>
     
 </body>
 </html>
