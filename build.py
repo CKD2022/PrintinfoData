@@ -14,7 +14,7 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - 印务生产数据</title>
+    <title>{{ title }} - 印务中心生产数据</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap');
         :root {
@@ -106,6 +106,35 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
             margin: 0 auto;
             padding: 40px 24px;
         }
+
+        /* 排序按钮 */
+        .sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .sort-btn:hover {
+            color: var(--accent);
+            background: rgba(37,99,235,0.05);
+        }
+        .sort-btn .sort-icon {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        .sort-btn.asc .sort-icon {
+            transform: rotate(180deg);
+        }
+
         .post-list { display: flex; flex-direction: column; gap: 24px; }
         .post-card {
             background: var(--card-bg);
@@ -182,7 +211,7 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
 <body class="{{ body_class }}">
     <nav class="nav">
         <a href="index.html" class="brand">
-            <span class="main-title">📊 印务生产数据</span>
+            <span class="main-title">📊 印务中心生产数据</span>
             {% if is_article %}
             <span class="article-title">– {{ article_title }}</span>
             <span class="article-date">📅 {{ article_date }}</span>
@@ -199,7 +228,7 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
     {{ content }}
 
     <footer class="footer">
-        <p>© {{ year }} 印务生产数据 · Powered by Python</p>
+        <p>© {{ year }} 印务中心生产数据 · Powered by Python</p>
     </footer>
 
     {% if is_article %}
@@ -275,6 +304,68 @@ BASE_TEMPLATE = '''<!DOCTYPE html>
         })();
     </script>
     {% endif %}
+
+    {% if not is_article %}
+    <script>
+        (function() {
+            const postList = document.querySelector('.post-list');
+            const sortBtn = document.getElementById('sortByDate');
+            let sortAsc = false;
+
+            function getCards() {
+                return Array.from(postList.querySelectorAll('.post-card'));
+            }
+
+            function parseDate(card) {
+                const metaEl = card.querySelector('.meta');
+                if (!metaEl) return '';
+                const text = metaEl.textContent.trim();
+                const match = text.match(/(\d{4}-\d{2}-\d{2})/);
+                return match ? match[1] : text.replace('📅 ', '');
+            }
+
+            function sortCards() {
+                const cards = getCards();
+                cards.sort(function(a, b) {
+                    const dateA = parseDate(a);
+                    const dateB = parseDate(b);
+                    if (sortAsc) {
+                        return dateA.localeCompare(dateB);
+                    } else {
+                        return dateB.localeCompare(dateA);
+                    }
+                });
+                cards.forEach(function(card) {
+                    postList.appendChild(card);
+                });
+            }
+
+            function updateButtonState() {
+                if (sortAsc) {
+                    sortBtn.classList.add('asc');
+                    sortBtn.innerHTML = '按时间排序 <span class="sort-icon">▼</span>';
+                } else {
+                    sortBtn.classList.remove('asc');
+                    sortBtn.innerHTML = '按时间排序 <span class="sort-icon">▼</span>';
+                }
+            }
+
+            sortBtn.addEventListener('click', function() {
+                sortAsc = !sortAsc;
+                sortCards();
+                updateButtonState();
+                localStorage.setItem('sortAsc', sortAsc);
+            });
+
+            const savedSort = localStorage.getItem('sortAsc');
+            if (savedSort === 'true') {
+                sortAsc = true;
+                sortCards();
+            }
+            updateButtonState();
+        })();
+    </script>
+    {% endif %}
 </body>
 </html>'''
 
@@ -291,7 +382,6 @@ def load_summaries():
 
 
 def load_order():
-    """从 order.json 加载自定义排序列表，返回 list 或 None"""
     if os.path.exists(ORDER_FILE):
         with open(ORDER_FILE, 'r', encoding='utf-8') as f:
             try:
@@ -340,18 +430,14 @@ def get_post_info(filepath, summaries):
 
 
 def sort_posts(posts, order_list):
-    """根据 order_list 排序，未列出的放在最后（保持原有顺序）"""
     if not order_list:
         return posts
-    # 建立现有 post 的字典
     post_dict = {p['link']: p for p in posts}
     sorted_posts = []
-    # 先按 order_list 顺序添加
     for name in order_list:
         if name in post_dict:
             sorted_posts.append(post_dict[name])
             del post_dict[name]
-    # 剩余未列出的追加到末尾
     sorted_posts.extend(post_dict.values())
     return sorted_posts
 
@@ -363,14 +449,12 @@ def build():
     summaries = load_summaries()
     order = load_order()
 
-    # 收集所有报告（先按文件名排序，之后再用 order 重排）
     raw_posts = []
     for fname in sorted(os.listdir(POSTS_DIR)):
         if fname.endswith('.html'):
             info = get_post_info(os.path.join(POSTS_DIR, fname), summaries)
             raw_posts.append(info)
 
-    # 应用自定义排序
     posts = sort_posts(raw_posts, order)
 
     template = Template(BASE_TEMPLATE)
@@ -386,12 +470,17 @@ def build():
         </a>'''
 
     index_html = template.render(
-        title='数据大屏展示',
+        title='印务中心 · 数据大屏',
         content=f'''
         <div class="container">
-            <div style="margin-bottom: 32px;">
-                <h1 style="font-size:1.6rem; font-weight:700;">数据大屏展示</h1>
+            <div style="margin-bottom: 8px;">
+                <h1 style="font-size:1.6rem; font-weight:700; margin:0;">印务中心 · 数据大屏</h1>
                 <p style="color:var(--muted); margin-top:8px;">共 {len(posts)} 篇报告</p>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+                <button class="sort-btn" id="sortByDate">
+                    按时间排序 <span class="sort-icon"></span>
+                </button>
             </div>
             <div class="post-list">
                 {cards_html if cards_html else '<p style="color:var(--muted);">暂无报告。</p>'}
@@ -438,9 +527,3 @@ def build():
 
 if __name__ == '__main__':
     build()
-
-
-'''
-cd docs
-python -m http.server 8000
-'''
