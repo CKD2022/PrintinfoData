@@ -6,7 +6,7 @@ echo ========================================
 echo.
 
 echo [1/4] 正在生成网站...
-D:\djangoProject\untitled\venv\Scripts\python.exe build.py
+D:\djangoProject\untitled\venv\Scripts\python.exe build_增加真人验证功能_自动生成验证背景.py
 if %errorlevel% neq 0 (
     echo [错误] 生成失败！
     pause
